@@ -11,6 +11,8 @@ public class MainActivity extends Activity {
     private TextView mTextView;
     private ActivityMainBinding binding;
 
+    //Client ID: 20049550827-qbsvqno3n8rp6tnl6fpr6b1h160dufst.apps.googleusercontent.com
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

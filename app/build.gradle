@@ -12,6 +12,10 @@ android {
         versionCode 1
         versionName "1.0"
 
+        manifestPlaceholders = [
+                'appAuthRedirectScheme': 'com.example.researchproject_javasecurity'
+        ]
+
     }
 
     buildTypes {
@@ -32,6 +36,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.wear:wear:1.2.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.0'
+    implementation 'androidx.wear:wear-remote-interactions:1.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.3'
     implementation 'net.openid:appauth:0.10.0'
 }

@@ -6,12 +6,40 @@ buildscript {
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.3"
-
+        classpath 'org.ajoberstar.grgit:grgit-gradle:4.1.1'
+        classpath 'org.jacoco:org.jacoco.core:0.8.7'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
 }
+try {
+    def grgit = org.ajoberstar.grgit.Grgit.open(dir: '.')
+    def lastCommit = grgit.head()
+
+    project.ext.versionNum = grgit.log(includes:['HEAD']).size()
+    project.ext.versionName = grgit.describe()
+    project.ext.versionDate = lastCommit.getDate()
+    if (project.ext.versionName == null) {
+        project.ext.versionName = 'DEV'
+    }
+} catch (Exception ignored) {
+    project.ext.versionNum = 1
+    project.ext.versionName = 'DEV'
+    project.ext.versionDate = new Date()
+}
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+project.ext.supportLibVersion = '28.0.0'
+project.ext.minSdkVersion = 16
+project.ext.compileSdkVersion = 30
+project.ext.buildToolsVersion = '30.0.0'
+task showVersion {
+    doLast {
+        logger.lifecycle("Version ID: " + project.versionNum)
+        logger.lifecycle("Version Name: " + project.versionName)
+        logger.lifecycle("Version Date: " + project.versionDate)
+    }
 }

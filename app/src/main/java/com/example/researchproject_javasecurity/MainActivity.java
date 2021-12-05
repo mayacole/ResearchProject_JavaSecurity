@@ -32,7 +32,8 @@ public class MainActivity extends Activity {
         if(mAuthState.getCurrent().isAuthorized()) {
             Log.d("Authenticated", "Done");
             //Need to finish this
-        } else {
+            //Possibly add a logout button if the AuthenticationState has authenticated already
+        } else { //if the AuthenticationState has not been authenticated, then set serviceConfig. Here we are calling out our clientID and Oauth and creating a profile.
             AuthorizationServiceConfiguration serviceConfig = new AuthorizationServiceConfiguration(Uri.parse("https://accounts.google.com/o/auth2/v2/auth"),
                     Uri.parse("https://www.googleapis.com/oauth2/v4/token"));
             String clientId = "20049550827-qbsvqno3n8rp6tnl6fpr6b1h160dufst.apps.googleusercontent.com";

@@ -48,6 +48,8 @@ public class MainActivity extends Activity {
             Intent intent = authService.getAuthorizationRequestIntent(request);
             startActivityForResult(intent, RC_AUTH);
         }
+
+        //Testing
         
         //setContentView(binding.getRoot());
 

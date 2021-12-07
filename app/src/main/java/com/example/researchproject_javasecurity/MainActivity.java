@@ -49,7 +49,6 @@ public class MainActivity extends Activity {
             startActivityForResult(intent, RC_AUTH);
         }
 
-        //Testing
         
         //setContentView(binding.getRoot());
 

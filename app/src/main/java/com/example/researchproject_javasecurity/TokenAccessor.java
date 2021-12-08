@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
-import org.chromium.base.Callback;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,19 +28,18 @@ import androidx.wear.phone.interactions.authentication.RemoteAuthClient;
 public class TokenAccessor {
 
     public static final String TAG = "Authenticate";
-    public OAuthListener listener;
+    public ListenerForOAuth listener;
     public RemoteAuthClient mClient;
     private static final String CLIENT_ID = "20049550827-ogn72uthppn43f3mmdfc7j1p7e8nfon8.apps.googleusercontent.com";
     private static final String CLIENT_SECRET = "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";
-    private String redirectUri;
     private String token;
 
-    public TokenAccessor(OAuthListener listener) {
+    public TokenAccessor(ListenerForOAuth listener) {
         this.listener = listener;
         mClient = RemoteAuthClient.create(listener.getActivity());
     }
 
-    public void getAccessToken() {
+    public void getAccess() {
         SharedPreferences sp = listener.getActivity().getPreferences(Context.MODE_PRIVATE);
         token = sp.getString("accessToken", null);
         if(token != null) {
@@ -52,7 +50,7 @@ public class TokenAccessor {
         }
     }
 
-    public String getRefreshToken() {
+    public String getRefresh() {
         SharedPreferences sp = listener.getActivity().getPreferences(Context.MODE_PRIVATE);
         token = sp.getString("refreshToken", null);
         if(token != null) {
@@ -64,14 +62,14 @@ public class TokenAccessor {
         return null;
     }
 
-    public void setAccessToken(String token) {
+    public void setAccess(String token) {
         SharedPreferences sp = listener.getActivity().getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("accessToken", token);
         editor.commit();
     }
 
-    public void setRefreshToken(String token) {
+    public void setRefresh(String token) {
         SharedPreferences sp = listener.getActivity().getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putString("refreshToken", token);
@@ -79,6 +77,8 @@ public class TokenAccessor {
     }
 
     protected void startOAuthFlow() {
+        //Inspiration from Google's demo
+        //Code: https://github.com/android/wear-os-samples/blob/main/WearOAuth/oauth-pkce/src/main/java/com/example/android/wearable/oauth/pkce/AuthPKCEViewModel.kt
         CodeVerifier code = new CodeVerifier();
         Uri uri = new Uri.Builder().encodedPath("https://accounts.google.com/o/auth2/v2/auth").appendQueryParameter("scope", "https://www.googleapis.com/oauth2/v4/token")
                 .build();
@@ -89,11 +89,6 @@ public class TokenAccessor {
 
     }
 
-    /**
-     * Helper method to update display with fetched results on the activity view.
-     *
-     * @param text Returned text to display
-     */
     private void updateStatus(final String text) {
         listener.getActivity().runOnUiThread(
                 new Runnable() {
@@ -104,7 +99,7 @@ public class TokenAccessor {
                 });
     }
 
-    private HttpURLConnection createHttpPostObject() {
+    private HttpURLConnection httpPOST() {
         HttpURLConnection conn = null;
         try {
             URL url = new URL("https://accounts.google.com/o/oauth2/token");
@@ -123,21 +118,21 @@ public class TokenAccessor {
         try {
             // Send post request
             conn.setDoOutput(true);
-            DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-            wr.writeBytes(urlParameters);
-            wr.flush();
-            wr.close();
+            DataOutputStream write = new DataOutputStream(conn.getOutputStream());
+            write.writeBytes(urlParameters);
+            write.flush();
+            write.close();
 
             // Retrieve post response
-            BufferedReader in = new BufferedReader(
+            BufferedReader input = new BufferedReader(
                     new InputStreamReader(conn.getInputStream()));
             String inputLine;
             StringBuffer response = new StringBuffer();
 
-            while ((inputLine = in.readLine()) != null) {
+            while ((inputLine = input.readLine()) != null) {
                 response.append(inputLine);
             }
-            in.close();
+            input.close();
             Log.d(TAG, response.toString());
 
             updateStatus(
@@ -162,23 +157,21 @@ public class TokenAccessor {
 
     public void refreshToken() {
         Runnable runnable =
-                new Runnable() {
-                    public void run() {
-                        String refreshToken = getRefreshToken();
-                        if(refreshToken == null) {
-                            updateStatus("Google OAuth 2.0 API refresh token not found. Initiating OAuth2.0 ...");
-                            return;
-                        }
-                        HttpURLConnection httpPost = createHttpPostObject();
-                        String urlParams =
-                                "&client_id=" + CLIENT_ID +
-                                        "&client_secret=" + CLIENT_SECRET +
-                                        "&refresh_token=" + refreshToken +
-                                        "&grant_type=" + "refresh_token";
-                        String[] tokens = acquireTokens(httpPost, urlParams);
-                        setAccessToken(tokens[0]);
-                        listener.receiveApiToken(tokens[0]);
+                () -> {
+                    String refreshToken = getRefresh();
+                    if(refreshToken == null) {
+                        updateStatus("Google OAuth 2.0 API refresh token not found. Initiating OAuth2.0 ...");
+                        return;
                     }
+                    HttpURLConnection httpPost = httpPOST();
+                    String urlParams =
+                            "&client_id=" + CLIENT_ID +
+                                    "&client_secret=" + CLIENT_SECRET +
+                                    "&refresh_token=" + refreshToken +
+                                    "&grant_type=" + "refresh_token";
+                    String[] tokens = acquireTokens(httpPost, urlParams);
+                    setAccess(tokens[0]);
+                    listener.receiveApiToken(tokens[0]);
                 };
         ExecutorService executor = Executors.newCachedThreadPool();
         executor.submit(runnable);
@@ -190,36 +183,29 @@ public class TokenAccessor {
         Log.d(TAG, "onResult(). requestUrl:" + oAuthRequest + " responseUrl: " + oAuthResponse);
         updateStatus("Request completed. Response URL: " + oAuthResponse);
 
-        /**
-         * ASynchronous task to submit the POST request containing the Authorization code
-         * to get the API token.
-         */
         Runnable runnable =
-                new Runnable() {
-
-                    public void run() {
-                        Uri response = oAuthResponse.getResponseUrl();
-                        String code = response.getQueryParameter("code");
-                        if (TextUtils.isEmpty(code)) {
-                            updateStatus("Google OAuth 2.0 API token exchange failed. No code query parameter in response URL");
-                        }
-                        HttpURLConnection httpPost = createHttpPostObject();
-                        String urlParams =
-                                "code=" + code +
-                                        "&client_id=" + CLIENT_ID +
-                                        "&client_secret=" + CLIENT_SECRET +
-                                        "&redirect_uri=" + redirectUri +
-                                        "&grant_type=" + "authorization_code";
-                        String[] tokens = null;
-                        if (httpPost != null) {
-                            tokens = acquireTokens(httpPost, urlParams);
-                            setAccessToken(tokens[0]);
-                            setRefreshToken(tokens[1]);
-                            updateStatus("Google OAuth 2.0 API token retrieved. Access Token: " + tokens[0] + " Refresh Token: " + tokens[1]);
-                            listener.receiveApiToken(tokens[0]);
-                        }
-
+                () -> {
+                    Uri response = oAuthResponse.getResponseUrl();
+                    String code = response.getQueryParameter("code");
+                    if (TextUtils.isEmpty(code)) {
+                        updateStatus("No code query parameter in response URL");
                     }
+                    HttpURLConnection httpPost = httpPOST();
+                    String urlParams =
+                            "code=" + code +
+                                    "&client_id=" + CLIENT_ID +
+                                    "&client_secret=" + CLIENT_SECRET +
+                                    "&redirect_uri=" + mClient.KEY_REQUEST_URL +
+                                    "&grant_type=" + "authorization_code";
+                    String[] tokens = null;
+                    if (httpPost != null) {
+                        tokens = acquireTokens(httpPost, urlParams);
+                        setAccess(tokens[0]);
+                        setRefresh(tokens[1]);
+                        updateStatus("Google OAuth 2.0 API token retrieved. Access Token: " + tokens[0] + " Refresh Token: " + tokens[1]);
+                        listener.receiveApiToken(tokens[0]);
+                    }
+
                 };
         ExecutorService executor = Executors.newCachedThreadPool();
         executor.submit(runnable);

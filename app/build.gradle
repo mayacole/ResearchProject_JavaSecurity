@@ -24,6 +24,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    useLibrary 'org.apache.http.legacy'
+
     buildFeatures {
         viewBinding true
     }
@@ -37,6 +40,9 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.wear:wear:1.2.0'
     implementation 'androidx.wear:wear-remote-interactions:1.0.0'
+    implementation 'androidx.wear:wear-phone-interactions:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.3'
     implementation 'net.openid:appauth:0.10.0'
+    implementation 'org.chromium.net:cronet-embedded:76.3809.111'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.4'
 }

@@ -14,11 +14,24 @@
         android:padding="@dimen/inner_frame_layout_padding"
         app:layout_boxedEdges="all">
 
-        <TextView
-            android:id="@+id/text"
+        <Button
+            android:id="@+id/authenticateButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/hello_world" />
+            android:layout_marginStart="25dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="8dp"
+            android:onClick="getToken"
+            android:text="@string/start_auth_flow" />
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="25pt"
+            android:layout_height="wrap_content"
+            android:text="@string/FinalProject"
+            android:textColor="#CFD8DC" />
 
     </FrameLayout>
 </androidx.wear.widget.BoxInsetLayout>
